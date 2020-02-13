@@ -8,7 +8,7 @@ class ImageData(object):
         self._data = data
         self._meta = meta
 
-    @proeprty
+    @property
     def data(self):
         """Image data array for this frame.
 
