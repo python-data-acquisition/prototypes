@@ -1,6 +1,71 @@
 # extended from https://gist.github.com/HazenBabcock/8d1042f564dcaee60c3a3972f2d56999
 
 
+class HWProperty(object):
+    """Defines a hardware property.
+    """
+    def __init__(self, name = None, value = None, limits = None, values = None, writable = None, readable = None, **kwds):
+        super().__init(**kwds)
+
+        self._name = name
+        self._value = value
+        self._limits = limits
+        self._values = values
+        self._writable = writable
+        self._readable = readable
+
+    @property
+    def name(self):
+        """Name of the property.
+
+        This is a string.
+        """
+
+    @property
+    def value(self):
+        """Current value of the property.
+
+        Usually this is a string or a number but it could also be an array or any
+        Python object.
+        """
+
+    @property
+    def limits(self):
+        """Limits on the range of the property.
+
+        Usually this a list [low, high], or none if there are no limits.
+        """
+
+    @property
+    def values(self):
+        """Allowed values for a property.
+
+        Usually this is a list of allowed values, or none if any value is allowed.
+        """
+
+    @property
+    def writable(self):
+        """Is the property writable?
+
+        This is boolean.
+        """
+
+    @property
+    def readable(self):
+        """Is the property readable?
+
+        This is a boolean. Do we have a use case for these kinds of properties? Do
+        people use unreadable properties?
+        """
+
+    def is_valid(self, value):
+        """Returns True is value is a valid setting for the property.
+
+        This is also used internally based on the values of limits and values to
+        enforce valid settings.
+        """
+        
+
 class ImageData(object):
     """Contains information about one or more acquired frames. 
     """
