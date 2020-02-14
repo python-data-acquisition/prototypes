@@ -29,6 +29,12 @@ class HWProperty(object):
         Python object.
         """
 
+    @value.setter
+    def value(self, new_value):
+        if not self.is_valid(new_value):
+            raise HWPropertyValueError(str(new_value) + " is not allowed.")
+        
+
     @property
     def limits(self):
         """Limits on the range of the property.
@@ -127,6 +133,7 @@ class ImagingDevice(object):
             Uniquely identifies the camera to open. The type of this object is defined by the 
             ImagingDevice subclass.
         """
+        self.properties_used = {}
 
     def open():
         # open camera
@@ -135,21 +142,24 @@ class ImagingDevice(object):
         # Shutdown / clean up.
         
     def get_properties(self, property_names):
-        """Return a dictionary of {'property_name': value} for the list of properties requested.
+        """Return a dictionary of {'property_name': HWProperty} for the list of properties requested.
         """
+        for elt in property_names:
+            prop = .. # Create property with current value.
+            p_dict[elt] = prop
+
+            # Add to record of properties of interest.
+            if not elt in self.properties_used:
+                self.properties_used[elt] = prop
+
+        return p_dict
         
     def get_property_info(self):
         """Return information about all properties supported by this device
 
         Return format is::
 
-            { 'property_name': {
-                'type': 'int'|'float', 
-                'limits': [min, max], 
-                'values': [list of accepted values], 
-                'writable': bool, 
-                'readable': bool },
-            }
+            { 'property_name': HWProperty }
 
         Some property names are standardized across all cameras (although cameras need not
         support all of these):
@@ -193,16 +203,17 @@ class ImagingDevice(object):
 
         Parameters
         ----------
-        properties : dict
-            Contains {'property_name': value} pairs to be set. May be OrderedDict in cases where
+        properties : dict or list
+            dict: Contains {'property_name': value} pairs to be set. May be OrderedDict in cases where
             properties must be set in a specific order.
+            list: A list of HWProperty objects.
 
         Returns
         -------
         need_restart : bool
             Indicates whether acquisition must be restarted before new values take effect
         new_values : dict
-            Contains {'property_name': value} for each property that was set. In some cases,
+            Contains {'property_name': HWProperty} for each property that was set. In some cases,
             the value returned here will differ from the one requested. May also contain
             the values of properties that were indirectly changed as a result of this
             request.
@@ -210,7 +221,36 @@ class ImagingDevice(object):
             A list of properties that may have changed results from get_property_info as
             a result of this request. This allows user interfaces to update dynamically as needed.
         """
-        
+        new_values = {}
+        for elt in properties:
+            if isinstance(elt, HWProperty):
+                # update based on elt.value
+            else:
+                # update based on properties[elt]
+
+            # Query updated value.
+            prop = .. # Create property with current value.
+            new_values[elt] = prop
+
+            # Add to record of properties that the user specifically requested.
+            #
+            # FIXME? Need to do something here so that this property also gets picked up
+            #        as changed?
+            if not elt in self.properties_used:
+                self.properties_used[elt] = prop
+
+        # Check for changes in the properties that the user is tracking.
+        #
+        # FIXME? Some properties are going to be queried multiple times which may not
+        #        be efficient. Perhaps 'new_values' and 'info_changed' are mutually
+        #        exclusive?
+        #
+        changed = {}
+        for elt in self.properties_used:
+            prop = .. # Create property with current value.
+            if (prop.value != self.properties_used[elt].value):
+                changed[elt] = prop
+    
     def get_images(self, max_count=None):
         """Return ImageData instances that have accumulated since the last call to get_images().
 
