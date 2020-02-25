@@ -1,18 +1,33 @@
 # extended from https://gist.github.com/HazenBabcock/8d1042f564dcaee60c3a3972f2d56999
 
 
+class HWPropertyValueError(Exception):
+    pass
+
+
 class HWProperty(object):
     """Defines a hardware property.
     """
-    def __init__(self, name = None, value = None, limits = None, values = None, writable = None, readable = None, **kwds):
+    def __init__(self,
+                 name = None,
+                 value = None,
+                 description = None,
+                 ptype = None,
+                 readable = None,
+                 writable = None,
+                 values = None,
+                 limits = None,
+                 **kwds):
         super().__init(**kwds)
 
         self._name = name
         self._value = value
-        self._limits = limits
-        self._values = values
-        self._writable = writable
+        self._description = description
+        self._ptype = ptype
         self._readable = readable
+        self._writable = writable
+        self._values = values
+        self._limits = limits
 
     @property
     def name(self):
@@ -34,21 +49,36 @@ class HWProperty(object):
         if not self.is_valid(new_value):
             raise HWPropertyValueError(str(new_value) + " is not allowed.")
         
-
     @property
-    def limits(self):
-        """Limits on the range of the property.
+    def description(self):
+        """A string that describes the property.
 
-        Usually this a list [low, high], or none if there are no limits.
+        This is a string describing the purpose of the property, for example
+        'camera frame rate in frames per second'.
         """
 
     @property
-    def values(self):
-        """Allowed values for a property.
+    def ptype(self):
+        """Type of the property (float, int, bool, str, etc..)
 
-        Usually this is a list of allowed values, or none if any value is allowed.
+        This is the type of the property, for example a floating point number
+        or an integer. Usually these are basic Python types, but numpy arrays
+        or even 'object' are also allowed.
+
+        FIXME: Any value in making this work with isinstance()? So for example 
+               the user could use 'isinstance(hw_property, float)' and this 
+               would return True of this was a floating point property? Or is 
+               this just a bad idea?
         """
+        
+    @property
+    def readable(self):
+        """Is the property readable?
 
+        This is a boolean. Do we have a use case for these kinds of properties? Do
+        people use unreadable properties?
+        """
+        
     @property
     def writable(self):
         """Is the property writable?
@@ -57,13 +87,19 @@ class HWProperty(object):
         """
 
     @property
-    def readable(self):
-        """Is the property readable?
+    def values(self):
+        """Allowed values for a property.
 
-        This is a boolean. Do we have a use case for these kinds of properties? Do
-        people use unreadable properties?
+        Usually this is a list of allowed values, or none if any value is allowed.
         """
+        
+    @property
+    def limits(self):
+        """Limits on the range of the property.
 
+        Usually this a list [low, high], or none if there are no limits.
+        """
+        
     def is_valid(self, value):
         """Returns True is value is a valid setting for the property.
 
