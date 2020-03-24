@@ -10,7 +10,6 @@ class HWProperty(object):
     """
     def __init__(self,
                  name = None,
-                 value = None,
                  description = None,
                  ptype = None,
                  readable = None,
@@ -21,7 +20,6 @@ class HWProperty(object):
         super().__init(**kwds)
 
         self._name = name
-        self._value = value
         self._description = description
         self._ptype = ptype
         self._readable = readable
@@ -29,25 +27,15 @@ class HWProperty(object):
         self._values = values
         self._limits = limits
 
+    def __eq__(self, other):
+        ...
+        
     @property
     def name(self):
         """Name of the property.
 
         This is a string.
         """
-
-    @property
-    def value(self):
-        """Current value of the property.
-
-        Usually this is a string or a number but it could also be an array or any
-        Python object.
-        """
-
-    @value.setter
-    def value(self, new_value):
-        if not self.is_valid(new_value):
-            raise HWPropertyValueError(str(new_value) + " is not allowed.")
         
     @property
     def description(self):
@@ -178,22 +166,25 @@ class ImagingDevice(object):
         # Shutdown / clean up.
         
     def get_properties(self, property_names):
-        """Return a dictionary of {'property_name': HWProperty} for the list of properties requested.
+        """Return a dictionary of {'property_name': value} for the list of properties requested.
         """
+        p_dict = {}
         for elt in property_names:
-            prop = .. # Create property with current value.
-            p_dict[elt] = prop
+            value = .. # Get current value.
+            p_dict[elt] = value
 
             # Add to record of properties of interest.
             if not elt in self.properties_used:
+                prop = .. # Get current info
                 self.properties_used[elt] = prop
 
         return p_dict
         
-    def get_property_info(self):
-        """Return information about all properties supported by this device
+    def get_properties_info(self, property_names):
+        """Return a dictionary of {'property_name': HWProperty} for the list of properties requested.
 
-        Return format is::
+        If 'property_names' is None then information about all properties supported by this device
+        are returned.
 
             { 'property_name': HWProperty }
 
@@ -239,54 +230,49 @@ class ImagingDevice(object):
 
         Parameters
         ----------
-        properties : dict or list
+        properties : dict
             dict: Contains {'property_name': value} pairs to be set. May be OrderedDict in cases where
             properties must be set in a specific order.
-            list: A list of HWProperty objects.
 
         Returns
         -------
         need_restart : bool
             Indicates whether acquisition must be restarted before new values take effect
         new_values : dict
-            Contains {'property_name': HWProperty} for each property that was set. In some cases,
+            Contains {'property_name': value} for each property that was set. In some cases,
             the value returned here will differ from the one requested. May also contain
             the values of properties that were indirectly changed as a result of this
             request.
         info_changed : list
-            A list of properties that may have changed results from get_property_info as
-            a result of this request. This allows user interfaces to update dynamically as needed.
+            A list of the names of the properties who information might have changed, for
+            example their allowed range. Use 'get_properties_info' to query for the 
+            updated information. This allows user interfaces to update dynamically as needed.
         """
+        need_restart = False
         new_values = {}
         for elt in properties:
-            if isinstance(elt, HWProperty):
-                # update based on elt.value
-            else:
-                # update based on properties[elt]
+            # update based on properties[elt]
 
             # Query updated value.
-            prop = .. # Create property with current value.
-            new_values[elt] = prop
+            value = ..
+            new_values[elt] = value
 
             # Add to record of properties that the user specifically requested.
             #
-            # FIXME? Need to do something here so that this property also gets picked up
-            #        as changed?
             if not elt in self.properties_used:
-                self.properties_used[elt] = prop
+                self.properties_used[elt] = True
 
         # Check for changes in the properties that the user is tracking.
         #
-        # FIXME? Some properties are going to be queried multiple times which may not
-        #        be efficient. Perhaps 'new_values' and 'info_changed' are mutually
-        #        exclusive?
-        #
-        changed = {}
+        info_changed = {}
         for elt in self.properties_used:
             prop = .. # Create property with current value.
-            if (prop.value != self.properties_used[elt].value):
+            if (prop != self.properties_used[elt]):
                 changed[elt] = prop
-    
+                self.properties_used[elt] = prop
+
+        return [need_restart, new_values, info_changed]
+
     def get_images(self, max_count=None):
         """Return ImageData instances that have accumulated since the last call to get_images().
 
