@@ -1,6 +1,101 @@
 # extended from https://gist.github.com/HazenBabcock/8d1042f564dcaee60c3a3972f2d56999
 
 
+class HWPropertyValueError(Exception):
+    pass
+
+
+class HWProperty(object):
+    """Defines a hardware property.
+    """
+    def __init__(self,
+                 name = None,
+                 description = None,
+                 ptype = None,
+                 readable = None,
+                 writable = None,
+                 values = None,
+                 limits = None,
+                 **kwds):
+        super().__init(**kwds)
+
+        self._name = name
+        self._description = description
+        self._ptype = ptype
+        self._readable = readable
+        self._writable = writable
+        self._values = values
+        self._limits = limits
+
+    def __eq__(self, other):
+        ...
+        
+    @property
+    def name(self):
+        """Name of the property.
+
+        This is a string.
+        """
+        
+    @property
+    def description(self):
+        """A string that describes the property.
+
+        This is a string describing the purpose of the property, for example
+        'camera frame rate in frames per second'.
+        """
+
+    @property
+    def ptype(self):
+        """Type of the property (float, int, bool, str, etc..)
+
+        This is the type of the property, for example a floating point number
+        or an integer. Usually these are basic Python types, but numpy arrays
+        or even 'object' are also allowed.
+
+        FIXME: Any value in making this work with isinstance()? So for example 
+               the user could use 'isinstance(hw_property, float)' and this 
+               would return True of this was a floating point property? Or is 
+               this just a bad idea?
+        """
+        
+    @property
+    def readable(self):
+        """Is the property readable?
+
+        This is a boolean. Do we have a use case for these kinds of properties? Do
+        people use unreadable properties?
+        """
+        
+    @property
+    def writable(self):
+        """Is the property writable?
+
+        This is boolean.
+        """
+
+    @property
+    def values(self):
+        """Allowed values for a property.
+
+        Usually this is a list of allowed values, or none if any value is allowed.
+        """
+        
+    @property
+    def limits(self):
+        """Limits on the range of the property.
+
+        Usually this a list [low, high], or none if there are no limits.
+        """
+        
+    def is_valid(self, value):
+        """Returns True is value is a valid setting for the property.
+
+        This is also used internally based on the values of limits and values to
+        enforce valid settings.
+        """
+        
+
 class ImageData(object):
     """Contains information about one or more acquired frames. 
     """
@@ -8,7 +103,7 @@ class ImageData(object):
         self._data = data
         self._meta = meta
 
-    @proeprty
+    @property
     def data(self):
         """Image data array for this frame.
 
@@ -62,6 +157,7 @@ class ImagingDevice(object):
             Uniquely identifies the camera to open. The type of this object is defined by the 
             ImagingDevice subclass.
         """
+        self.properties_used = {}
 
     def open():
         # open camera
@@ -72,19 +168,25 @@ class ImagingDevice(object):
     def get_properties(self, property_names):
         """Return a dictionary of {'property_name': value} for the list of properties requested.
         """
+        p_dict = {}
+        for elt in property_names:
+            value = .. # Get current value.
+            p_dict[elt] = value
+
+            # Add to record of properties of interest.
+            if not elt in self.properties_used:
+                prop = .. # Get current info
+                self.properties_used[elt] = prop
+
+        return p_dict
         
-    def get_property_info(self):
-        """Return information about all properties supported by this device
+    def get_properties_info(self, property_names):
+        """Return a dictionary of {'property_name': HWProperty} for the list of properties requested.
 
-        Return format is::
+        If 'property_names' is None then information about all properties supported by this device
+        are returned.
 
-            { 'property_name': {
-                'type': 'int'|'float', 
-                'limits': [min, max], 
-                'values': [list of accepted values], 
-                'writable': bool, 
-                'readable': bool },
-            }
+            { 'property_name': HWProperty }
 
         Some property names are standardized across all cameras (although cameras need not
         support all of these):
@@ -129,7 +231,7 @@ class ImagingDevice(object):
         Parameters
         ----------
         properties : dict
-            Contains {'property_name': value} pairs to be set. May be OrderedDict in cases where
+            dict: Contains {'property_name': value} pairs to be set. May be OrderedDict in cases where
             properties must be set in a specific order.
 
         Returns
@@ -142,10 +244,35 @@ class ImagingDevice(object):
             the values of properties that were indirectly changed as a result of this
             request.
         info_changed : list
-            A list of properties that may have changed results from get_property_info as
-            a result of this request. This allows user interfaces to update dynamically as needed.
+            A list of the names of the properties who information might have changed, for
+            example their allowed range. Use 'get_properties_info' to query for the 
+            updated information. This allows user interfaces to update dynamically as needed.
         """
-        
+        need_restart = False
+        new_values = {}
+        for elt in properties:
+            # update based on properties[elt]
+
+            # Query updated value.
+            value = ..
+            new_values[elt] = value
+
+            # Add to record of properties that the user specifically requested.
+            #
+            if not elt in self.properties_used:
+                self.properties_used[elt] = True
+
+        # Check for changes in the properties that the user is tracking.
+        #
+        info_changed = {}
+        for elt in self.properties_used:
+            prop = .. # Create property with current value.
+            if (prop != self.properties_used[elt]):
+                changed[elt] = prop
+                self.properties_used[elt] = prop
+
+        return [need_restart, new_values, info_changed]
+
     def get_images(self, max_count=None):
         """Return ImageData instances that have accumulated since the last call to get_images().
 
